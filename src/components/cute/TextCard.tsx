@@ -1,16 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 /**
  * TextCard - 瀑布流中的单个文字卡片
- * 包含：可爱文字内容、风格标签、收藏按钮、Copy按钮
+ * 包含：标题、可爱文字内容、风格标签、收藏按钮、Copy按钮、复制成功动画
  */
 
 interface TextCardProps {
+  title: string;
   content: string;
   tag: string;
-  variant: 'pink' | 'cream' | 'lavender' | 'mint';
+  variant: 'pink' | 'cream' | 'lavender' | 'mint' | 'rose' | 'peach';
+  tagColor: 'pink' | 'rose' | 'lavender' | 'mint' | 'peach' | 'coral';
   /** 入场动画延迟（秒） */
   delay?: number;
 }
@@ -20,56 +22,121 @@ const variantStyles: Record<TextCardProps['variant'], string> = {
   cream: 'bg-[#FFFBF7] border-[#FFE4D6]',
   lavender: 'bg-[#F8F0FC] border-[#E8D5F2]',
   mint: 'bg-[#F2FAF5] border-[#C8E6D5]',
+  rose: 'bg-[#FFF0F5] border-[#FFB6C9]',
+  peach: 'bg-[#FFF7F0] border-[#FFD4B8]',
 };
 
-const tagColors: Record<TextCardProps['variant'], string> = {
-  pink: 'bg-[#FFD1DC] text-[#E8638A]',
-  cream: 'bg-[#FFE4D6] text-[#C97B5E]',
-  lavender: 'bg-[#E8D5F2] text-[#9B6BB5]',
-  mint: 'bg-[#C8E6D5] text-[#5E9B7A]',
+const tagColors: Record<TextCardProps['tagColor'], string> = {
+  pink: 'bg-[#FFD1DC] text-[#C9506A]',
+  rose: 'bg-[#FFB6C9] text-[#D94A6A]',
+  lavender: 'bg-[#E8D5F2] text-[#8B5AA6]',
+  mint: 'bg-[#C8E6D5] text-[#4A8A6A]',
+  peach: 'bg-[#FFD4B8] text-[#C97A4A]',
+  coral: 'bg-[#FFC4B8] text-[#D95A4A]',
+};
+
+const titleColors: Record<TextCardProps['variant'], string> = {
+  pink: 'text-[#E8638A]',
+  cream: 'text-[#C97B5E]',
+  lavender: 'text-[#9B6BB5]',
+  mint: 'text-[#5E9B7A]',
+  rose: 'text-[#D94A6A]',
+  peach: 'text-[#C97A4A]',
 };
 
 export default function TextCard({
+  title,
   content,
   tag,
   variant,
+  tagColor,
   delay = 0,
 }: TextCardProps) {
   const [favorited, setFavorited] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [toastVisible, setToastVisible] = useState(false);
 
-  const handleCopy = async () => {
+  const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(content);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      setToastVisible(true);
+      setTimeout(() => {
+        setCopied(false);
+        setTimeout(() => setToastVisible(false), 200);
+      }, 1200);
     } catch {
       // 剪贴板权限失败时静默处理
     }
-  };
+  }, [content]);
 
-  const handleFavorite = () => {
+  const handleFavorite = useCallback(() => {
     setFavorited((prev) => !prev);
-  };
+  }, []);
 
   return (
     <div
-      className={`ct-shadow-soft ct-shadow-soft-hover group break-inside-avoid rounded-3xl border-2 p-5 transition-all duration-300 hover:-translate-y-1 ${variantStyles[variant]}`}
+      className={`ct-shadow-soft ct-shadow-soft-hover group relative break-inside-avoid rounded-3xl border-2 p-5 transition-all duration-300 hover:-translate-y-1 ${variantStyles[variant]}`}
       style={{
         animation: 'ct-fade-up 0.6s ease-out both',
         animationDelay: `${delay}s`,
       }}
     >
-      {/* 卡片内容 */}
-      <pre className="mb-4 whitespace-pre-wrap break-words font-sans text-lg leading-relaxed text-[#5c4a4a]">
-        {content}
-      </pre>
+      {/* 复制成功 Toast */}
+      {toastVisible && (
+        <div
+          className={`absolute -top-3 right-4 z-20 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-white shadow-lg ${
+            copied ? 'ct-anim-toast-in' : 'ct-anim-toast-out'
+          }`}
+          style={{
+            background: 'linear-gradient(135deg, #5E9B7A 0%, #4A8A6A 100%)',
+          }}
+        >
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M5 13l4 4L19 7"
+              stroke="white"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          Copied!
+        </div>
+      )}
+
+      {/* 卡片标题 - 杂志风格 */}
+      <h3
+        className={`mb-2 font-display text-lg font-semibold tracking-wide ${titleColors[variant]}`}
+      >
+        {title}
+      </h3>
+
+      {/* 分隔装饰 */}
+      <div className="mb-3 flex items-center gap-2">
+        <div className={`h-px flex-1 ${titleColors[variant]} opacity-30`} />
+        <span className="text-xs opacity-40">✦</span>
+        <div className={`h-px flex-1 ${titleColors[variant]} opacity-30`} />
+      </div>
+
+      {/* 卡片文字内容 - 艺术感展示 */}
+      <div className="mb-4 rounded-2xl bg-white/50 p-4">
+        <pre className="whitespace-pre-wrap break-words font-sans text-lg leading-relaxed text-[#5c4a4a]">
+          {content}
+        </pre>
+      </div>
 
       {/* 底部操作栏 */}
       <div className="flex items-center justify-between">
         {/* 风格标签 */}
         <span
-          className={`rounded-full px-3 py-1 text-xs font-medium ${tagColors[variant]}`}
+          className={`rounded-full px-3.5 py-1.5 text-xs font-semibold tracking-wide ${tagColors[tagColor]}`}
         >
           {tag}
         </span>
@@ -80,69 +147,51 @@ export default function TextCard({
           <button
             type="button"
             onClick={handleCopy}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-[#9b8585] transition-all hover:bg-white hover:text-[#FF8FAB] active:scale-90"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-[#9b8585] shadow-sm transition-all hover:bg-white hover:text-[#FF8FAB] hover:shadow-md active:scale-90"
             aria-label="Copy text"
             title="Copy"
           >
-            {copied ? (
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M5 13l4 4L19 7"
-                  stroke="#5E9B7A"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            ) : (
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <rect
-                  x="8"
-                  y="8"
-                  width="12"
-                  height="12"
-                  rx="3"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                />
-                <path
-                  d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-            )}
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect
+                x="8"
+                y="8"
+                width="12"
+                height="12"
+                rx="3"
+                stroke="currentColor"
+                strokeWidth="2"
+              />
+              <path
+                d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
           </button>
 
           {/* 收藏按钮 */}
           <button
             type="button"
             onClick={handleFavorite}
-            className={`flex h-8 w-8 items-center justify-center rounded-full transition-all active:scale-90 ${
+            className={`flex h-9 w-9 items-center justify-center rounded-full shadow-sm transition-all active:scale-90 ${
               favorited
-                ? 'bg-[#FFD1DC] text-[#E8638A]'
-                : 'bg-white/80 text-[#9b8585] hover:bg-white hover:text-[#FF8FAB]'
+                ? 'bg-[#FFD1DC] text-[#E8638A] shadow-md'
+                : 'bg-white/80 text-[#9b8585] hover:bg-white hover:text-[#FF8FAB] hover:shadow-md'
             }`}
             aria-label="Favorite"
             aria-pressed={favorited}
             title="Favorite"
           >
             <svg
-              width="14"
-              height="14"
+              width="15"
+              height="15"
               viewBox="0 0 24 24"
               fill={favorited ? 'currentColor' : 'none'}
               xmlns="http://www.w3.org/2000/svg"

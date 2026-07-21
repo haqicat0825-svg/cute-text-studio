@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
-import { Quicksand } from 'next/font/google';
+import { Quicksand, Playfair_Display } from 'next/font/google';
 import { Inspector } from 'react-dev-inspector';
+import Navbar from '@/components/cute/Navbar';
 import './globals.css';
 
 const quicksand = Quicksand({
@@ -8,6 +9,13 @@ const quicksand = Quicksand({
   weight: ['400', '500', '600', '700'],
   display: 'swap',
   variable: '--font-quicksand',
+});
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-playfair',
 });
 
 export const metadata: Metadata = {
@@ -46,9 +54,13 @@ export default function RootLayout({
   const isDev = process.env.COZE_PROJECT_ENV === 'DEV';
 
   return (
-    <html lang="en" className={quicksand.variable}>
+    <html
+      lang="en"
+      className={`${quicksand.variable} ${playfair.variable}`}
+    >
       <body className={`antialiased ${quicksand.className}`}>
         {isDev && <Inspector />}
+        <Navbar />
         {children}
       </body>
     </html>
