@@ -26,9 +26,12 @@ export type CategoryId =
   | 'soft'
   | 'minimal'
   | 'animal'
-  | 'divider';
+  | 'divider'
+  | 'cute'
+  | 'dreamy'
+  | 'food';
 
-export type ContentType = 'cute-text' | 'kaomoji' | 'unicode' | 'divider';
+export type ContentType = 'cute-text' | 'kaomoji' | 'unicode' | 'divider' | 'decoration';
 
 /**
  * 单个素材项的统一结构
@@ -52,4 +55,6 @@ export interface TextItem {
   tagColor: TagColor;
   /** 内容类型 */
   type: ContentType;
+  /** 氛围/情绪标签（可选） */
+  mood?: string;
 }
