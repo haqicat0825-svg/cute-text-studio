@@ -43,9 +43,9 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
   --font-sans:
-    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', ui-sans-serif,
-    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, sans-serif;
+    var(--font-quicksand), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
     'Courier New', monospace;
@@ -55,72 +55,73 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 0.75rem;
+  /* Cute Text Studio - Japanese Cute + Korean Girly palette */
+  --background: #fff9f5;
+  --foreground: #5c4a4a;
+  --card: #fff5f0;
+  --card-foreground: #5c4a4a;
+  --popover: #fff9f5;
+  --popover-foreground: #5c4a4a;
+  --primary: #ff8fab;
+  --primary-foreground: #ffffff;
+  --secondary: #ffd1dc;
+  --secondary-foreground: #5c4a4a;
+  --muted: #fff0ec;
+  --muted-foreground: #9b8585;
+  --accent: #ffd1dc;
+  --accent-foreground: #e8638a;
+  --destructive: #e8638a;
+  --border: #ffd1dc;
+  --input: #ffe4ec;
+  --ring: #ff8fab;
+  --chart-1: #ff8fab;
+  --chart-2: #e8d5f2;
+  --chart-3: #c8e6d5;
+  --chart-4: #ffd1dc;
+  --chart-5: #fff5f0;
+  --sidebar: #fff9f5;
+  --sidebar-foreground: #5c4a4a;
+  --sidebar-primary: #ff8fab;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ffd1dc;
+  --sidebar-accent-foreground: #e8638a;
+  --sidebar-border: #ffd1dc;
+  --sidebar-ring: #ff8fab;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #2a1f1f;
+  --foreground: #fff9f5;
+  --card: #3a2a2a;
+  --card-foreground: #fff9f5;
+  --popover: #2a1f1f;
+  --popover-foreground: #fff9f5;
+  --primary: #ff8fab;
+  --primary-foreground: #2a1f1f;
+  --secondary: #4a3030;
+  --secondary-foreground: #fff9f5;
+  --muted: #3a2a2a;
+  --muted-foreground: #c4a8a8;
+  --accent: #4a3030;
+  --accent-foreground: #ffd1dc;
+  --destructive: #e8638a;
+  --border: #4a3030;
+  --input: #4a3030;
+  --ring: #ff8fab;
+  --chart-1: #ff8fab;
+  --chart-2: #e8d5f2;
+  --chart-3: #c8e6d5;
+  --chart-4: #ffd1dc;
+  --chart-5: #fff5f0;
+  --sidebar: #2a1f1f;
+  --sidebar-foreground: #fff9f5;
+  --sidebar-primary: #ff8fab;
+  --sidebar-primary-foreground: #2a1f1f;
+  --sidebar-accent: #4a3030;
+  --sidebar-accent-foreground: #ffd1dc;
+  --sidebar-border: #4a3030;
+  --sidebar-ring: #ff8fab;
 }
 
 @layer base {
@@ -134,4 +135,163 @@
 
 body {
   @apply font-sans;
+}
+
+/* ===== Cute Text Studio Custom Animations ===== */
+
+/* Gentle fade-in from below */
+@keyframes ct-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Soft fade-in (no movement) */
+@keyframes ct-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Gentle scale bounce for bows and key elements */
+@keyframes ct-pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Floating motion for stars and decorative elements */
+@keyframes ct-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Slow rotation for decorative sparkles */
+@keyframes ct-twinkle {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.9) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1) rotate(15deg);
+  }
+}
+
+/* Heart pulse for favorite buttons */
+@keyframes ct-heart-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+/* Utility animation classes */
+.ct-anim-fade-up {
+  animation: ct-fade-up 0.8s ease-out both;
+}
+.ct-anim-fade-in {
+  animation: ct-fade-in 1.2s ease-out both;
+}
+.ct-anim-pop-in {
+  animation: ct-pop-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.ct-anim-float {
+  animation: ct-float 3s ease-in-out infinite;
+}
+.ct-anim-twinkle {
+  animation: ct-twinkle 2.5s ease-in-out infinite;
+}
+.ct-anim-heart {
+  animation: ct-heart-pulse 0.4s ease-out;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .ct-anim-fade-up,
+  .ct-anim-fade-in {
+    animation: ct-fade-in 0.4s ease-out both;
+  }
+  .ct-anim-pop-in {
+    animation: ct-fade-in 0.4s ease-out both;
+  }
+  .ct-anim-float,
+  .ct-anim-twinkle {
+    animation: none;
+  }
+}
+
+/* Polka dot background pattern */
+.ct-polka-dots {
+  background-image: radial-gradient(
+    circle,
+    rgba(255, 143, 171, 0.12) 1.5px,
+    transparent 1.5px
+  );
+  background-size: 24px 24px;
+}
+
+/* Soft pink glow shadow for cards */
+.ct-shadow-soft {
+  box-shadow:
+    0 4px 20px rgba(255, 143, 171, 0.1),
+    0 1px 4px rgba(232, 99, 138, 0.06);
+}
+
+.ct-shadow-soft-hover:hover {
+  box-shadow:
+    0 8px 30px rgba(255, 143, 171, 0.18),
+    0 2px 8px rgba(232, 99, 138, 0.1);
+}
+
+/* Pinterest-style masonry layout using CSS columns */
+.ct-masonry {
+  column-gap: 1rem;
+  column-count: 1;
+}
+@media (min-width: 640px) {
+  .ct-masonry {
+    column-count: 2;
+  }
+}
+@media (min-width: 1024px) {
+  .ct-masonry {
+    column-count: 3;
+  }
+}
+@media (min-width: 1280px) {
+  .ct-masonry {
+    column-count: 4;
+  }
+}
+
+.ct-masonry > * {
+  break-inside: avoid;
+  margin-bottom: 1rem;
 }
