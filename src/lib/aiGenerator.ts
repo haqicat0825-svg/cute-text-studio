@@ -6,13 +6,11 @@
  * 不生成新文字，只装饰用户原有文字
  */
 
-import { verifiedItems } from '@/data';
-import type { TextItem, ItemType } from '@/data/types';
-
-/** 仅使用 verified 状态的素材，按类型筛选 */
-function getVerifiedByType(type: ItemType): TextItem[] {
-  return verifiedItems.filter((item) => item.type === type && item.status === 'verified');
-}
+import { kaomojiLibrary } from '@/data/kaomojiLibrary';
+import { unicodeLibrary } from '@/data/unicodeLibrary';
+import { decorationLibrary } from '@/data/decorationLibrary';
+import { cuteTextLibrary } from '@/data/cuteTextLibrary';
+import type { TextItem } from '@/data/types';
 
 /* ────────────────────────  类型定义  ──────────────────────── */
 
@@ -217,10 +215,10 @@ export function decorateText(inputText: string, mode: DecorateMode): DecorateOut
   const config = MODE_CONFIGS[mode];
   const trimmedText = inputText.trim();
 
-  // 从素材库筛选候选素材（仅 verified 状态）
-  const kaomojiPool = topNByScore(getVerifiedByType('kaomoji'), config, 12);
-  const unicodePool = topNByScore(getVerifiedByType('unicode'), config, 10);
-  const decoPool = topNByScore(getVerifiedByType('decoration'), config, 8);
+  // 从素材库筛选候选素材
+  const kaomojiPool = topNByScore(kaomojiLibrary, config, 12);
+  const unicodePool = topNByScore(unicodeLibrary, config, 10);
+  const decoPool = topNByScore(decorationLibrary, config, 8);
 
   // 3 个方案使用不同排版
   const layouts = shuffle([...config.layoutPreference]).slice(0, 3);
