@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 
 /**
  * SurpriseMeButton - 随机发现按钮
@@ -12,13 +13,13 @@ interface SurpriseMeButtonProps {
 }
 
 export default function SurpriseMeButton({ onSurprise }: SurpriseMeButtonProps) {
+  const { t } = useLanguage();
   const [isSparking, setIsSparking] = useState(false);
 
   const handleClick = useCallback(() => {
     setIsSparking(true);
     onSurprise?.();
 
-    // 触发 sparkle 动画后重置
     setTimeout(() => setIsSparking(false), 800);
   }, [onSurprise]);
 
@@ -56,7 +57,7 @@ export default function SurpriseMeButton({ onSurprise }: SurpriseMeButtonProps) 
       <span className="text-lg transition-transform group-hover:rotate-12">
         🎲
       </span>
-      <span>Surprise Me</span>
+      <span>{t.explore.surpriseMe}</span>
       <span className="text-lg opacity-60">✦</span>
     </button>
   );

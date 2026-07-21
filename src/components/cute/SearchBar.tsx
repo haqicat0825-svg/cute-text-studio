@@ -1,31 +1,48 @@
 'use client';
 
 import { useState } from 'react';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 
 /**
  * SearchBar - 大型搜索/AI 输入框
  * 带有可爱样式的搜索输入框和示例提示
+ * 支持中英文 placeholder
  */
 
 interface SearchBarProps {
-  /** 示例提示文本列表 */
   examples?: string[];
+  onSearch?: (query: string) => void;
 }
 
 export default function SearchBar({
-  examples = ['pink birthday style', 'soft korean aesthetic', 'summer diary'],
+  examples,
+  onSearch,
 }: SearchBarProps) {
+  const { t, locale } = useLanguage();
   const [value, setValue] = useState('');
-  const [activeExample, setActiveExample] = useState(0);
+  const [activeExample, setActiveExample] = useState(-1);
 
-  const handleExampleClick = (text: string) => {
+  const defaultExamples =
+    locale === 'zh'
+      ? ['生日甜妹风', '韩系柔软', '夏天日记']
+      : ['pink birthday style', 'soft korean aesthetic', 'summer diary'];
+
+  const displayExamples = examples ?? defaultExamples;
+
+  const handleChange = (text: string) => {
     setValue(text);
+    onSearch?.(text);
+  };
+
+  const handleExampleClick = (text: string, index: number) => {
+    setActiveExample(index);
+    handleChange(text);
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="mx-auto w-full max-w-2xl">
       {/* 搜索框 */}
-      <div className="relative group">
+      <div className="group relative">
         {/* 输入框外层光晕 */}
         <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-pink-200 via-rose-200 to-pink-200 opacity-60 blur-sm transition-opacity group-focus-within:opacity-100" />
 
@@ -35,13 +52,27 @@ export default function SearchBar({
           <input
             type="text"
             value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder="Tell me your cute style..."
+            onChange={(e) => handleChange(e.target.value)}
+            placeholder={t.explore.searchPlaceholder}
             className="flex-1 bg-transparent text-base text-[#5c4a4a] placeholder:text-[#9b8585] focus:outline-none"
           />
+          {value && (
+            <button
+              type="button"
+              onClick={() => {
+                setValue('');
+                setActiveExample(-1);
+                onSearch?.('');
+              }}
+              className="mr-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#FFF5F0] text-[#c4a8a8] transition-colors hover:bg-[#FFD1DC] hover:text-[#E8638A]"
+              aria-label="Clear"
+            >
+              ✕
+            </button>
+          )}
           <button
             type="button"
-            className="ml-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#FF8FAB] to-[#E8638A] text-white shadow-sm transition-transform hover:scale-105 active:scale-95"
+            className="ml-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#FF8FAB] to-[#E8638A] text-white shadow-sm transition-transform hover:scale-105 active:scale-95"
             aria-label="Search"
           >
             <svg
@@ -65,15 +96,12 @@ export default function SearchBar({
 
       {/* 示例提示 */}
       <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-        <span className="text-sm text-[#9b8585]">Try:</span>
-        {examples.map((example, index) => (
+        <span className="text-sm text-[#9b8585]">{t.explore.searchHint}</span>
+        {displayExamples.map((example, index) => (
           <button
             key={example}
             type="button"
-            onClick={() => {
-              setActiveExample(index);
-              handleExampleClick(example);
-            }}
+            onClick={() => handleExampleClick(example, index)}
             className={`rounded-full border px-4 py-1.5 text-sm transition-all ${
               activeExample === index && value === example
                 ? 'border-[#FF8FAB] bg-[#FFD1DC] text-[#E8638A]'

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Quicksand, Playfair_Display } from 'next/font/google';
 import { Inspector } from 'react-dev-inspector';
 import Navbar from '@/components/cute/Navbar';
+import { LanguageProvider } from '@/components/providers/LanguageProvider';
 import './globals.css';
 
 const quicksand = Quicksand({
@@ -32,6 +33,8 @@ export const metadata: Metadata = {
     'korean aesthetic',
     'japanese cute',
     'text decoration',
+    'kaomoji',
+    '颜文字',
   ],
   authors: [{ name: 'Cute Text Studio' }],
   openGraph: {
@@ -59,9 +62,11 @@ export default function RootLayout({
       className={`${quicksand.variable} ${playfair.variable}`}
     >
       <body className={`antialiased ${quicksand.className}`}>
-        {isDev && <Inspector />}
-        <Navbar />
-        {children}
+        <LanguageProvider>
+          {isDev && <Inspector />}
+          <Navbar />
+          {children}
+        </LanguageProvider>
       </body>
     </html>
   );

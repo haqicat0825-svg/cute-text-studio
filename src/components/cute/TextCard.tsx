@@ -1,23 +1,23 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useLanguage } from '@/components/providers/LanguageProvider';
+import type { TextItem } from '@/data/types';
 
 /**
  * TextCard - 瀑布流中的单个文字卡片
  * 包含：标题、可爱文字内容、风格标签、收藏按钮、Copy按钮、复制成功动画
+ * 收藏状态通过 localStorage 持久化
  */
 
 interface TextCardProps {
-  title: string;
-  content: string;
-  tag: string;
-  variant: 'pink' | 'cream' | 'lavender' | 'mint' | 'rose' | 'peach';
-  tagColor: 'pink' | 'rose' | 'lavender' | 'mint' | 'peach' | 'coral';
+  item: TextItem;
   /** 入场动画延迟（秒） */
   delay?: number;
 }
 
-const variantStyles: Record<TextCardProps['variant'], string> = {
+const variantStyles: Record<TextItem['variant'], string> = {
   pink: 'bg-[#FFF5F0] border-[#FFD1DC]',
   cream: 'bg-[#FFFBF7] border-[#FFE4D6]',
   lavender: 'bg-[#F8F0FC] border-[#E8D5F2]',
@@ -26,7 +26,7 @@ const variantStyles: Record<TextCardProps['variant'], string> = {
   peach: 'bg-[#FFF7F0] border-[#FFD4B8]',
 };
 
-const tagColors: Record<TextCardProps['tagColor'], string> = {
+const tagColors: Record<TextItem['tagColor'], string> = {
   pink: 'bg-[#FFD1DC] text-[#C9506A]',
   rose: 'bg-[#FFB6C9] text-[#D94A6A]',
   lavender: 'bg-[#E8D5F2] text-[#8B5AA6]',
@@ -35,7 +35,7 @@ const tagColors: Record<TextCardProps['tagColor'], string> = {
   coral: 'bg-[#FFC4B8] text-[#D95A4A]',
 };
 
-const titleColors: Record<TextCardProps['variant'], string> = {
+const titleColors: Record<TextItem['variant'], string> = {
   pink: 'text-[#E8638A]',
   cream: 'text-[#C97B5E]',
   lavender: 'text-[#9B6BB5]',
@@ -44,21 +44,17 @@ const titleColors: Record<TextCardProps['variant'], string> = {
   peach: 'text-[#C97A4A]',
 };
 
-export default function TextCard({
-  title,
-  content,
-  tag,
-  variant,
-  tagColor,
-  delay = 0,
-}: TextCardProps) {
-  const [favorited, setFavorited] = useState(false);
+export default function TextCard({ item, delay = 0 }: TextCardProps) {
+  const { t } = useLanguage();
+  const { isFavorited, toggleFavorite } = useFavorites();
   const [copied, setCopied] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
 
+  const favorited = isFavorited(item.id);
+
   const handleCopy = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(content);
+      await navigator.clipboard.writeText(item.content);
       setCopied(true);
       setToastVisible(true);
       setTimeout(() => {
@@ -68,15 +64,15 @@ export default function TextCard({
     } catch {
       // 剪贴板权限失败时静默处理
     }
-  }, [content]);
+  }, [item.content]);
 
   const handleFavorite = useCallback(() => {
-    setFavorited((prev) => !prev);
-  }, []);
+    toggleFavorite(item);
+  }, [item, toggleFavorite]);
 
   return (
     <div
-      className={`ct-shadow-soft ct-shadow-soft-hover group relative break-inside-avoid rounded-3xl border-2 p-5 transition-all duration-300 hover:-translate-y-1 ${variantStyles[variant]}`}
+      className={`ct-shadow-soft ct-shadow-soft-hover group relative break-inside-avoid rounded-3xl border-2 p-5 transition-all duration-300 hover:-translate-y-1 ${variantStyles[item.variant]}`}
       style={{
         animation: 'ct-fade-up 0.6s ease-out both',
         animationDelay: `${delay}s`,
@@ -107,38 +103,50 @@ export default function TextCard({
               strokeLinejoin="round"
             />
           </svg>
-          Copied!
+          {t.common.copied}
         </div>
       )}
 
       {/* 卡片标题 - 杂志风格 */}
       <h3
-        className={`mb-2 font-display text-lg font-semibold tracking-wide ${titleColors[variant]}`}
+        className={`mb-2 font-display text-lg font-semibold tracking-wide ${titleColors[item.variant]}`}
       >
-        {title}
+        {item.title}
       </h3>
 
       {/* 分隔装饰 */}
       <div className="mb-3 flex items-center gap-2">
-        <div className={`h-px flex-1 ${titleColors[variant]} opacity-30`} />
+        <div className={`h-px flex-1 ${titleColors[item.variant]} opacity-30`} />
         <span className="text-xs opacity-40">✦</span>
-        <div className={`h-px flex-1 ${titleColors[variant]} opacity-30`} />
+        <div className={`h-px flex-1 ${titleColors[item.variant]} opacity-30`} />
       </div>
 
       {/* 卡片文字内容 - 艺术感展示 */}
       <div className="mb-4 rounded-2xl bg-white/50 p-4">
         <pre className="whitespace-pre-wrap break-words font-sans text-lg leading-relaxed text-[#5c4a4a]">
-          {content}
+          {item.content}
         </pre>
+      </div>
+
+      {/* 标签 */}
+      <div className="mb-4 flex flex-wrap gap-1.5">
+        {item.tags.slice(0, 3).map((tag) => (
+          <span
+            key={tag}
+            className="rounded-full bg-white/60 px-2.5 py-1 text-xs text-[#9b8585]"
+          >
+            #{tag}
+          </span>
+        ))}
       </div>
 
       {/* 底部操作栏 */}
       <div className="flex items-center justify-between">
         {/* 风格标签 */}
         <span
-          className={`rounded-full px-3.5 py-1.5 text-xs font-semibold tracking-wide ${tagColors[tagColor]}`}
+          className={`rounded-full px-3.5 py-1.5 text-xs font-semibold tracking-wide ${tagColors[item.tagColor]}`}
         >
-          {tag}
+          {item.style}
         </span>
 
         {/* 按钮组 */}
@@ -148,8 +156,8 @@ export default function TextCard({
             type="button"
             onClick={handleCopy}
             className="flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-[#9b8585] shadow-sm transition-all hover:bg-white hover:text-[#FF8FAB] hover:shadow-md active:scale-90"
-            aria-label="Copy text"
-            title="Copy"
+            aria-label={t.common.copy}
+            title={t.common.copy}
           >
             <svg
               width="15"
@@ -185,9 +193,9 @@ export default function TextCard({
                 ? 'bg-[#FFD1DC] text-[#E8638A] shadow-md'
                 : 'bg-white/80 text-[#9b8585] hover:bg-white hover:text-[#FF8FAB] hover:shadow-md'
             }`}
-            aria-label="Favorite"
+            aria-label={favorited ? t.common.removeFav : t.common.favorite}
             aria-pressed={favorited}
-            title="Favorite"
+            title={favorited ? t.common.removeFav : t.common.favorite}
           >
             <svg
               width="15"
@@ -198,11 +206,11 @@ export default function TextCard({
               className={favorited ? 'ct-anim-heart' : ''}
             >
               <path
-                d="M12 21s-7-4.5-9.5-9C1 9 2.5 5 6.5 5c2 0 3.5 1 5.5 3 2-2 3.5-3 5.5-3 4 0 5.5 4 4 7-2.5 4.5-9.5 9-9.5 9z"
+                d="M12 21s-7-4.5-9.5-9C1 9 2.5 5 6 5c2 0 3.5 1 4.5 2.5C11.5 6 13 5 15 5c3.5 0 5 4 3.5 7-2.5 4.5-9.5 9-9.5 9z"
                 stroke="currentColor"
                 strokeWidth="2"
+                strokeLinecap="round"
                 strokeLinejoin="round"
-                fill={favorited ? 'currentColor' : 'none'}
               />
             </svg>
           </button>
