@@ -1,60 +1,94 @@
-/**
- * 素材数据通用类型定义
- * 所有素材库共用此类型结构
- */
+// ============================================================
+// Cute Text Studio - 素材类型定义
+// ============================================================
 
-export type VariantColor =
-  | 'pink'
-  | 'cream'
-  | 'lavender'
-  | 'mint'
-  | 'rose'
-  | 'peach';
-
-export type TagColor =
-  | 'pink'
-  | 'rose'
-  | 'lavender'
-  | 'mint'
-  | 'peach'
-  | 'coral';
-
+/** 素材分类 ID */
 export type CategoryId =
-  | 'sweet'
-  | 'japanese'
-  | 'korean'
-  | 'soft'
-  | 'minimal'
-  | 'animal'
-  | 'divider'
-  | 'cute'
-  | 'dreamy'
-  | 'food';
+  | 'sweet' // 🎀 Sweet Girl
+  | 'japanese' // 🌸 Japanese Cute
+  | 'korean' // 🤍 Korean Style
+  | 'soft' // ☁ Soft Life
+  | 'minimal' // ✨ Minimal
+  | 'animal' // 🐰 Animal
+  | 'divider' // ✦ Divider
+  | 'cute' // 🎀 Cute（可爱颜文字）
+  | 'dreamy' // 🌙 Dreamy（梦幻氛围）
+  | 'food'; // 🍰 Food（日常生活）
 
-export type ContentType = 'cute-text' | 'kaomoji' | 'unicode' | 'divider' | 'decoration';
+/** 素材类型 */
+export type ItemType = 'kaomoji' | 'cute-text' | 'unicode' | 'divider' | 'decoration';
+
+/** 卡片颜色变体 */
+export type Variant = 'pink' | 'cream' | 'lavender' | 'mint' | 'rose' | 'peach';
+
+/** 标签颜色 */
+export type TagColor = 'pink' | 'rose' | 'lavender' | 'mint' | 'peach' | 'coral';
 
 /**
- * 单个素材项的统一结构
+ * 素材数据结构
+ * 每个素材必须包含以下字段
  */
 export interface TextItem {
-  /** 唯一标识 */
+  /** 唯一 ID，格式：前缀-编号（如 km-001） */
   id: string;
-  /** 标题 */
+  /** 卡片标题 */
   title: string;
-  /** 文字内容 */
+  /** 素材内容（保持原字符，不做修改） */
   content: string;
-  /** 分类 ID（用于筛选） */
+  /** 分类 ID */
   category: CategoryId;
-  /** 风格标签（显示用） */
+  /** 显示风格名 */
   style: string;
-  /** 标签数组（用于搜索匹配） */
+  /** 搜索关键词（中英文混合） */
   tags: string[];
-  /** 卡片背景色变体 */
-  variant: VariantColor;
-  /** 标签文字颜色变体 */
+  /** 卡片颜色变体 */
+  variant: Variant;
+  /** 标签颜色 */
   tagColor: TagColor;
-  /** 内容类型 */
-  type: ContentType;
-  /** 氛围/情绪标签（可选） */
+  /** 素材类型 */
+  type: ItemType;
+  /** 情绪关键词（可选） */
   mood?: string;
+
+  // ===== 权重系统（AI 生成优先级参考） =====
+  /** 人气值（0-100，越高越优先被 AI 选中） */
+  popularity?: number;
+  /** 收藏数（模拟值，用于排序权重） */
+  favoriteCount?: number;
+  /** 风格匹配分（0-100，越高风格越突出） */
+  styleScore?: number;
+}
+
+/** 分类信息 */
+export interface Category {
+  id: CategoryId;
+  label: string;
+  labelZh: string;
+  icon: string;
+}
+
+/** AI 生成结果 */
+export interface AIGenerationResult {
+  /** 生成结果的唯一 ID */
+  id: string;
+  /** 生成标题 */
+  title: string;
+  /** 组合后的完整内容 */
+  content: string;
+  /** 使用的素材 ID 列表 */
+  sourceIds: string[];
+  /** 分类 */
+  category: CategoryId;
+  /** 风格 */
+  style: string;
+  /** 标签 */
+  tags: string[];
+  /** 卡片颜色 */
+  variant: Variant;
+  /** 标签颜色 */
+  tagColor: TagColor;
+  /** 类型 */
+  type: ItemType;
+  /** 生成依据说明 */
+  reason: string;
 }

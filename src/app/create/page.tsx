@@ -1,67 +1,20 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import FloatingStars from '@/components/cute/FloatingStars';
 import PolkaBackground from '@/components/cute/PolkaBackground';
 import BowDecoration from '@/components/cute/BowDecoration';
 import TextCard from '@/components/cute/TextCard';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { useFavorites } from '@/hooks/useFavorites';
-import { allItems } from '@/data';
-import type { TextItem } from '@/data/types';
+import { generateFromLibrary, getLibraryStats } from '@/lib/aiGenerator';
+import type { AIGenerationResult } from '@/data/types';
 
 /**
- * Create 页面 - AI 文字生成器（模拟）
- * 用户输入关键词 + 选择风格 → 生成模拟 AI 结果
- * 结果支持 Copy、收藏、再生成
+ * Create 页面 - AI 文字生成器
+ * 核心逻辑：从素材库匹配素材 → 组合成新排版
+ * 不生成新颜文字/Unicode，100% 使用现有素材库
  */
-
-// 风格装饰模板
-const styleDecorations: Record<string, { prefix: string; suffix: string }> = {
-  sweet: { prefix: '🎀 ', suffix: ' 🎀' },
-  japanese: { prefix: '✧˖°', suffix: '°˖✧' },
-  korean: { prefix: '˗ˏˋ', suffix: 'ˎˊ˗' },
-  soft: { prefix: '☁︎', suffix: '☁︎ ♡' },
-};
-
-// 随机装饰符
-const randomDecorations = ['✨', '♡', '✦', '✿', '🌸', '🤍', '⸝⸝⸝', '˚₊‧⁺˖⋆'];
-
-function generateResult(input: string, style: string): TextItem {
-  const decor = styleDecorations[style] ?? styleDecorations.sweet;
-  const randomDecor1 = randomDecorations[Math.floor(Math.random() * randomDecorations.length)];
-  const randomDecor2 = randomDecorations[Math.floor(Math.random() * randomDecorations.length)];
-
-  // 根据输入生成内容
-  const baseText = input.trim() || 'cute style';
-  const content = `${decor.prefix} ${randomDecor1} ${baseText} ${randomDecor2} ${decor.suffix}`;
-
-  const styleMap: Record<string, { style: string; category: TextItem['category']; variant: TextItem['variant']; tagColor: TextItem['tagColor'] }> = {
-    sweet: { style: 'Sweet Girl', category: 'sweet', variant: 'pink', tagColor: 'pink' },
-    japanese: { style: 'Japanese Cute', category: 'japanese', variant: 'rose', tagColor: 'rose' },
-    korean: { style: 'Korean Style', category: 'korean', variant: 'lavender', tagColor: 'lavender' },
-    soft: { style: 'Soft Life', category: 'soft', variant: 'cream', tagColor: 'peach' },
-  };
-
-  const styleInfo = styleMap[style] ?? styleMap.sweet;
-
-  return {
-    id: `ai-${Date.now()}`,
-    title: 'AI Generated',
-    content,
-    category: styleInfo.category,
-    style: styleInfo.style,
-    tags: [input.trim() || 'cute', 'ai', 'generated'],
-    variant: styleInfo.variant,
-    tagColor: styleInfo.tagColor,
-    type: 'cute-text',
-  };
-}
-
-// 从现有素材库随机选一个作为"灵感推荐"
-function getRandomInspiration(): TextItem {
-  return allItems[Math.floor(Math.random() * allItems.length)];
-}
 
 export default function CreatePage() {
   const { t } = useLanguage();
@@ -69,31 +22,51 @@ export default function CreatePage() {
   const [input, setInput] = useState('');
   const [selectedStyle, setSelectedStyle] = useState('sweet');
   const [generating, setGenerating] = useState(false);
-  const [result, setResult] = useState<TextItem | null>(null);
-  const [inspiration, setInspiration] = useState<TextItem | null>(null);
+  const [result, setResult] = useState<AIGenerationResult | null>(null);
+  const [history, setHistory] = useState<AIGenerationResult[]>([]);
+
+  const stats = useMemo(() => getLibraryStats(), []);
 
   const handleGenerate = useCallback(() => {
     if (!input.trim()) return;
     setGenerating(true);
-    // 模拟 AI 生成延迟
+    // 模拟 AI 生成延迟（实际是素材匹配计算）
     setTimeout(() => {
-      const generated = generateResult(input, selectedStyle);
+      const generated = generateFromLibrary(input);
       setResult(generated);
-      setInspiration(getRandomInspiration());
+      setHistory((prev) => [generated, ...prev].slice(0, 5));
       setGenerating(false);
-    }, 800);
-  }, [input, selectedStyle]);
+    }, 600);
+  }, [input]);
 
   const handleRegenerate = useCallback(() => {
     if (!input.trim()) return;
     setGenerating(true);
     setTimeout(() => {
-      const generated = generateResult(input, selectedStyle);
+      const generated = generateFromLibrary(input);
       setResult(generated);
-      setInspiration(getRandomInspiration());
+      setHistory((prev) => [generated, ...prev].slice(0, 5));
       setGenerating(false);
-    }, 800);
-  }, [input, selectedStyle]);
+    }, 600);
+  }, [input]);
+
+  // 将 AIGenerationResult 转为 TextItem 格式，以便复用 TextCard 组件
+  const resultAsTextItem = useMemo(() => {
+    if (!result) return null;
+    return {
+      id: result.id,
+      title: result.title,
+      content: result.content,
+      category: result.category,
+      style: result.style,
+      tags: result.tags,
+      variant: result.variant,
+      tagColor: result.tagColor,
+      type: 'cute-text' as const,
+    };
+  }, [result]);
+
+  const isResultFavorited = resultAsTextItem ? isFavorited(resultAsTextItem.id) : false;
 
   const styleOptions = [
     { id: 'sweet', icon: '🎀', label: t.create.styleOptions.sweet, color: 'from-[#FFD1DC] to-[#FF8FAB]' },
@@ -101,8 +74,6 @@ export default function CreatePage() {
     { id: 'korean', icon: '🤍', label: t.create.styleOptions.korean, color: 'from-[#C8E6D5] to-[#A8D4BA]' },
     { id: 'soft', icon: '☁', label: t.create.styleOptions.soft, color: 'from-[#FFD4B8] to-[#FFB8A0]' },
   ];
-
-  const isResultFavorited = result ? isFavorited(result.id) : false;
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#FFF9F5]">
@@ -188,6 +159,35 @@ export default function CreatePage() {
                 {t.create.needInput}
               </p>
             )}
+
+            {/* 素材库统计 */}
+            <div className="rounded-3xl border-2 border-[#E8D5F2]/50 bg-white/60 p-5 backdrop-blur-sm">
+              <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-[#8B5AA6]">
+                <span>📚</span>
+                <span>参考素材库 · Library Stats</span>
+              </p>
+              <div className="grid grid-cols-4 gap-2 text-center">
+                <div className="rounded-xl bg-[#FFF5F0] p-2">
+                  <p className="font-display text-lg font-semibold text-[#FF8FAB]">{stats.kaomoji}</p>
+                  <p className="text-xs text-[#9b8585]">Kaomoji</p>
+                </div>
+                <div className="rounded-xl bg-[#FFF5F0] p-2">
+                  <p className="font-display text-lg font-semibold text-[#E8638A]">{stats.unicode}</p>
+                  <p className="text-xs text-[#9b8585]">Unicode</p>
+                </div>
+                <div className="rounded-xl bg-[#FFF5F0] p-2">
+                  <p className="font-display text-lg font-semibold text-[#8B5AA6]">{stats.cuteText}</p>
+                  <p className="text-xs text-[#9b8585]">Cute Text</p>
+                </div>
+                <div className="rounded-xl bg-[#FFF5F0] p-2">
+                  <p className="font-display text-lg font-semibold text-[#6BB595]">{stats.decoration}</p>
+                  <p className="text-xs text-[#9b8585]">Decoration</p>
+                </div>
+              </div>
+              <p className="mt-2 text-center text-xs text-[#c4a8a8]">
+                总计 {stats.total} 条精选素材 · AI 优先从中匹配
+              </p>
+            </div>
           </div>
 
           {/* 右侧 — 预览/结果区 */}
@@ -203,12 +203,28 @@ export default function CreatePage() {
                   <div className="text-center">
                     <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-[#FFD1DC] border-t-[#FF8FAB]" />
                     <p className="text-sm text-[#c4a8a8]">{t.create.generating}</p>
+                    <p className="mt-1 text-xs text-[#d4b8b8]">正在从素材库匹配中...</p>
                   </div>
                 </div>
-              ) : result ? (
+              ) : result && resultAsTextItem ? (
                 <div className="space-y-4">
                   {/* 生成的结果卡片 */}
-                  <TextCard item={result} delay={0} />
+                  <TextCard item={resultAsTextItem} delay={0} />
+
+                  {/* AI 匹配说明 */}
+                  {result.reason && (
+                    <div className="rounded-2xl border border-[#E8D5F2]/40 bg-[#F8F0FC]/60 p-3.5">
+                      <p className="flex items-start gap-1.5 text-xs leading-relaxed text-[#8B5AA6]">
+                        <span className="shrink-0">💡</span>
+                        <span>{result.reason}</span>
+                      </p>
+                      {result.sourceIds.length > 0 && (
+                        <p className="mt-1.5 text-xs text-[#c4a8a8]">
+                          来源素材：{result.sourceIds.length} 个（来自精选素材库）
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   {/* 操作按钮 */}
                   <div className="flex gap-3">
@@ -223,7 +239,7 @@ export default function CreatePage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => result && toggleFavorite(result)}
+                      onClick={() => resultAsTextItem && toggleFavorite(resultAsTextItem)}
                       className={`flex flex-1 items-center justify-center gap-2 rounded-full border-2 px-4 py-2.5 text-sm font-medium transition-all active:scale-95 ${
                         isResultFavorited
                           ? 'border-[#FF8FAB] bg-[#FFD1DC] text-[#E8638A]'
@@ -250,33 +266,61 @@ export default function CreatePage() {
               )}
             </div>
 
-            {/* 灵感示例 */}
-            <div className="rounded-3xl border-2 border-[#FFD1DC]/60 bg-white/80 p-6 backdrop-blur-sm">
-              <label className="mb-3 block font-display text-lg font-semibold tracking-wide text-[#9B6BB5]">
-                {t.create.inspirationLabel}
-              </label>
-              <div className="space-y-3">
-                {(inspiration ? [inspiration] : allItems.slice(0, 3)).map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between rounded-2xl border border-[#FFD1DC]/30 bg-[#FFF9F5] p-3.5"
-                  >
-                    <div className="truncate pr-2">
-                      <p className="text-sm font-medium text-[#5c4a4a]">{item.content.split('\n')[0]}</p>
-                      <p className="mt-0.5 text-xs text-[#c4a8a8]">{item.style}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => navigator.clipboard.writeText(item.content).catch(() => {})}
-                      className="shrink-0 rounded-full bg-white/80 px-3 py-1 text-xs text-[#FF8FAB] shadow-sm transition-all hover:bg-white active:scale-95"
-                      aria-label={t.common.copy}
-                    >
-                      {t.create.copyBtn}
-                    </button>
-                  </div>
-                ))}
+            {/* 生成历史 */}
+            {history.length > 1 && (
+              <div className="rounded-3xl border-2 border-[#FFD1DC]/60 bg-white/80 p-6 backdrop-blur-sm">
+                <label className="mb-3 block font-display text-lg font-semibold tracking-wide text-[#9B6BB5]">
+                  生成历史 · History
+                </label>
+                <div className="space-y-3">
+                  {history.slice(1, 4).map((item) => {
+                    const histAsTextItem = {
+                      id: item.id,
+                      title: item.title,
+                      content: item.content,
+                      category: item.category,
+                      style: item.style,
+                      tags: item.tags,
+                      variant: item.variant,
+                      tagColor: item.tagColor,
+                      type: 'cute-text' as const,
+                    };
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between rounded-2xl border border-[#FFD1DC]/30 bg-[#FFF9F5] p-3.5"
+                      >
+                        <div className="truncate pr-2">
+                          <p className="text-sm font-medium text-[#5c4a4a]">{item.content.split('\n')[0]}</p>
+                          <p className="mt-0.5 text-xs text-[#c4a8a8]">{item.style} · {item.sourceIds.length} 素材</p>
+                        </div>
+                        <div className="flex shrink-0 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => navigator.clipboard.writeText(item.content).catch(() => {})}
+                            className="rounded-full bg-white/80 px-3 py-1 text-xs text-[#FF8FAB] shadow-sm transition-all hover:bg-white active:scale-95"
+                            aria-label={t.common.copy}
+                          >
+                            {t.create.copyBtn}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => histAsTextItem && toggleFavorite(histAsTextItem)}
+                            className={`rounded-full px-3 py-1 text-xs shadow-sm transition-all active:scale-95 ${
+                              isFavorited(item.id)
+                                ? 'bg-[#FFD1DC] text-[#E8638A]'
+                                : 'bg-white/80 text-[#9b8585] hover:bg-[#FFF5F0]'
+                            }`}
+                          >
+                            {isFavorited(item.id) ? '♥' : '♡'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
