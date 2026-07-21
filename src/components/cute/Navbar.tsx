@@ -21,6 +21,7 @@ export default function Navbar() {
     { href: '/explore', label: t.nav.explore, icon: '✦' },
     { href: '/create', label: t.nav.create, icon: '✎' },
     { href: '/collection', label: t.nav.collection, icon: '♡' },
+    { href: '/manager', label: t.manager.title, icon: '⚙' },
   ];
 
   return (
