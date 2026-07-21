@@ -1,88 +1,74 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import FloatingStars from '@/components/cute/FloatingStars';
 import PolkaBackground from '@/components/cute/PolkaBackground';
 import BowDecoration from '@/components/cute/BowDecoration';
-import TextCard from '@/components/cute/TextCard';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { useFavorites } from '@/hooks/useFavorites';
-import { generateFromLibrary, getLibraryStats } from '@/lib/aiGenerator';
-import type { AIGenerationResult } from '@/data/types';
+import { decorateText, DECORATE_MODES } from '@/lib/aiGenerator';
+import type { DecorateMode, DecorateOutput } from '@/lib/aiGenerator';
 
 /**
- * Create 页面 - AI 文字生成器
- * 核心逻辑：从素材库匹配素材 → 组合成新排版
- * 不生成新颜文字/Unicode，100% 使用现有素材库
+ * Create 页面 — AI Text Decorator（AI 文字装饰器）
+ *
+ * 核心逻辑：用户输入一句文字 → AI 从素材库选择装饰元素 → 组合输出
+ * 保留用户原始文字，只做装饰，不生成新文字。
  */
-
 export default function CreatePage() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const { isFavorited, toggleFavorite } = useFavorites();
   const [input, setInput] = useState('');
-  const [selectedStyle, setSelectedStyle] = useState('sweet');
+  const [mode, setMode] = useState<DecorateMode>('cute');
   const [generating, setGenerating] = useState(false);
-  const [result, setResult] = useState<AIGenerationResult | null>(null);
-  const [history, setHistory] = useState<AIGenerationResult[]>([]);
-
-  const stats = useMemo(() => getLibraryStats(), []);
+  const [output, setOutput] = useState<DecorateOutput | null>(null);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [genCount, setGenCount] = useState(0);
 
   const handleGenerate = useCallback(() => {
     if (!input.trim()) return;
     setGenerating(true);
-    // 模拟 AI 生成延迟（实际是素材匹配计算）
+    // 模拟 AI 装饰延迟
     setTimeout(() => {
-      const generated = generateFromLibrary(input);
-      setResult(generated);
-      setHistory((prev) => [generated, ...prev].slice(0, 5));
+      const result = decorateText(input, mode);
+      setOutput(result);
+      setGenCount((c) => c + 1);
       setGenerating(false);
-    }, 600);
-  }, [input]);
+    }, 700);
+  }, [input, mode]);
 
-  const handleRegenerate = useCallback(() => {
-    if (!input.trim()) return;
-    setGenerating(true);
-    setTimeout(() => {
-      const generated = generateFromLibrary(input);
-      setResult(generated);
-      setHistory((prev) => [generated, ...prev].slice(0, 5));
-      setGenerating(false);
-    }, 600);
-  }, [input]);
+  const handleCopy = useCallback((text: string, index: number) => {
+    navigator.clipboard.writeText(text).catch(() => {});
+    setCopiedIndex(index);
+    setTimeout(() => setCopiedIndex(null), 2000);
+  }, []);
 
-  // 将 AIGenerationResult 转为 TextItem 格式，以便复用 TextCard 组件
-  const resultAsTextItem = useMemo(() => {
-    if (!result) return null;
-    return {
-      id: result.id,
-      title: result.title,
-      content: result.content,
-      category: result.category,
-      style: result.style,
-      tags: result.tags,
-      variant: result.variant,
-      tagColor: result.tagColor,
-      type: 'cute-text' as const,
-    };
-  }, [result]);
-
-  const isResultFavorited = resultAsTextItem ? isFavorited(resultAsTextItem.id) : false;
-
-  const styleOptions = [
-    { id: 'sweet', icon: '🎀', label: t.create.styleOptions.sweet, color: 'from-[#FFD1DC] to-[#FF8FAB]' },
-    { id: 'japanese', icon: '🌸', label: t.create.styleOptions.japanese, color: 'from-[#E8D5F2] to-[#C8B5E8]' },
-    { id: 'korean', icon: '🤍', label: t.create.styleOptions.korean, color: 'from-[#C8E6D5] to-[#A8D4BA]' },
-    { id: 'soft', icon: '☁', label: t.create.styleOptions.soft, color: 'from-[#FFD4B8] to-[#FFB8A0]' },
-  ];
+  const handleFavorite = useCallback(
+    (text: string, index: number) => {
+      const fakeId = `deco-${Date.now()}-${index}`;
+      toggleFavorite({
+        id: fakeId,
+        title: locale === 'zh' ? 'AI 装饰' : 'AI Decorated',
+        content: text,
+        category: 'cute',
+        style: DECORATE_MODES.find((m) => m.id === mode)?.labelEn ?? 'Cute',
+        tags: ['AI', 'decorated', mode],
+        variant: 'pink',
+        tagColor: 'pink',
+        type: 'cute-text',
+      });
+    },
+    [mode, locale, toggleFavorite],
+  );
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#FFF9F5]">
       <PolkaBackground />
       <FloatingStars />
 
-      <div className="relative z-10 mx-auto max-w-5xl px-4 py-10 md:px-8 md:py-14">
+      <div className="relative z-10 mx-auto max-w-4xl px-4 py-10 md:px-8 md:py-14">
         {/* 页面标题 */}
-        <div className="ct-anim-fade-up mb-12 text-center">
+        <div className="ct-anim-fade-up mb-10 text-center">
           <div className="mb-4 flex justify-center">
             <BowDecoration className="h-12 w-18 opacity-60" />
           </div>
@@ -94,237 +80,192 @@ export default function CreatePage() {
           </p>
         </div>
 
-        {/* 主内容区：双栏布局 */}
-        <div className="grid gap-8 md:grid-cols-2">
-          {/* 左侧 — 输入区 */}
-          <div className="ct-anim-fade-up space-y-6" style={{ animationDelay: '0.15s' }}>
-            {/* 文字输入框 */}
-            <div className="rounded-3xl border-2 border-[#FFD1DC]/60 bg-white/80 p-6 backdrop-blur-sm">
-              <label className="mb-3 block font-display text-lg font-semibold tracking-wide text-[#9B6BB5]">
-                {t.create.inputLabel}
-              </label>
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={t.create.inputPlaceholder}
-                rows={3}
-                className="w-full resize-none rounded-2xl border-2 border-[#FFD1DC]/40 bg-[#FFF9F5] p-4 text-base text-[#5c4a4a] placeholder:text-[#c4a8a8] focus:border-[#FF8FAB] focus:outline-none focus:ring-2 focus:ring-[#FFD1DC]/30"
-              />
-              <p className="mt-2 flex items-center gap-1.5 text-sm text-[#c4a8a8]">
-                <span>✨</span>
-                <span>{t.create.inputHint}</span>
-              </p>
-            </div>
+        {/* 输入区 */}
+        <div className="ct-anim-fade-up rounded-3xl border-2 border-[#FFD1DC]/60 bg-white/80 p-6 backdrop-blur-sm md:p-8" style={{ animationDelay: '0.1s' }}>
+          <label className="mb-3 block font-display text-lg font-semibold tracking-wide text-[#9B6BB5]">
+            {t.create.inputLabel}
+          </label>
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={t.create.inputPlaceholder}
+            rows={2}
+            className="w-full resize-none rounded-2xl border-2 border-[#FFD1DC]/40 bg-[#FFF9F5] p-4 text-base text-[#5c4a4a] placeholder:text-[#c4a8a8] focus:border-[#FF8FAB] focus:outline-none focus:ring-2 focus:ring-[#FFD1DC]/30"
+          />
 
-            {/* 风格选择器 */}
-            <div className="rounded-3xl border-2 border-[#FFD1DC]/60 bg-white/80 p-6 backdrop-blur-sm">
-              <label className="mb-3 block font-display text-lg font-semibold tracking-wide text-[#9B6BB5]">
-                {t.create.styleLabel}
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {styleOptions.map((style) => {
-                  const isSelected = selectedStyle === style.id;
-                  return (
-                    <button
-                      key={style.id}
-                      type="button"
-                      onClick={() => setSelectedStyle(style.id)}
-                      className={`flex items-center gap-2 rounded-2xl border-2 p-3.5 text-sm font-medium transition-all ${
-                        isSelected
-                          ? 'border-[#FF8FAB] bg-[#FFF5F0] text-[#E8638A] shadow-md'
-                          : 'border-[#FFD1DC]/30 bg-white/50 text-[#9b8585] hover:border-[#FF8FAB]/40 hover:bg-[#FFF5F0]'
-                      }`}
-                    >
-                      <span className="text-lg">{style.icon}</span>
-                      <span>{style.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 生成按钮 */}
-            <button
-              type="button"
-              onClick={handleGenerate}
-              disabled={!input.trim() || generating}
-              className="flex w-full items-center justify-center gap-2 rounded-full border-2 border-[#FF8FAB] bg-gradient-to-br from-[#FF8FAB] to-[#E8638A] px-8 py-4 text-base font-semibold text-white shadow-md transition-all hover:scale-[1.02] hover:shadow-lg active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
-            >
-              <span className="text-lg">{generating ? '⏳' : '✨'}</span>
-              <span>{generating ? t.create.generating : t.create.generateBtn}</span>
-            </button>
-
-            {!input.trim() && (
-              <p className="text-center text-sm text-[#c4a8a8]">
-                {t.create.needInput}
-              </p>
-            )}
-
-            {/* 素材库统计 */}
-            <div className="rounded-3xl border-2 border-[#E8D5F2]/50 bg-white/60 p-5 backdrop-blur-sm">
-              <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-[#8B5AA6]">
-                <span>📚</span>
-                <span>参考素材库 · Library Stats</span>
-              </p>
-              <div className="grid grid-cols-4 gap-2 text-center">
-                <div className="rounded-xl bg-[#FFF5F0] p-2">
-                  <p className="font-display text-lg font-semibold text-[#FF8FAB]">{stats.kaomoji}</p>
-                  <p className="text-xs text-[#9b8585]">Kaomoji</p>
-                </div>
-                <div className="rounded-xl bg-[#FFF5F0] p-2">
-                  <p className="font-display text-lg font-semibold text-[#E8638A]">{stats.unicode}</p>
-                  <p className="text-xs text-[#9b8585]">Unicode</p>
-                </div>
-                <div className="rounded-xl bg-[#FFF5F0] p-2">
-                  <p className="font-display text-lg font-semibold text-[#8B5AA6]">{stats.cuteText}</p>
-                  <p className="text-xs text-[#9b8585]">Cute Text</p>
-                </div>
-                <div className="rounded-xl bg-[#FFF5F0] p-2">
-                  <p className="font-display text-lg font-semibold text-[#6BB595]">{stats.decoration}</p>
-                  <p className="text-xs text-[#9b8585]">Decoration</p>
-                </div>
-              </div>
-              <p className="mt-2 text-center text-xs text-[#c4a8a8]">
-                总计 {stats.total} 条精选素材 · AI 优先从中匹配
-              </p>
+          {/* 装饰模式选择 */}
+          <div className="mt-5">
+            <label className="mb-3 block font-display text-base font-semibold tracking-wide text-[#9B6BB5]">
+              {t.create.modeLabel}
+            </label>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              {DECORATE_MODES.map((m) => {
+                const isSelected = mode === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setMode(m.id)}
+                    className={`flex flex-col items-center gap-1.5 rounded-2xl border-2 p-3.5 text-sm font-medium transition-all ${
+                      isSelected
+                        ? 'border-[#FF8FAB] bg-[#FFF5F0] text-[#E8638A] shadow-md'
+                        : 'border-[#FFD1DC]/30 bg-white/50 text-[#9b8585] hover:border-[#FF8FAB]/40 hover:bg-[#FFF5F0]'
+                    }`}
+                  >
+                    <span className="text-xl">{m.icon}</span>
+                    <span>{locale === 'zh' ? m.labelZh : m.labelEn}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* 右侧 — 预览/结果区 */}
-          <div className="ct-anim-fade-up space-y-6" style={{ animationDelay: '0.3s' }}>
-            {/* 生成结果 */}
-            <div className="rounded-3xl border-2 border-[#FFD1DC]/60 bg-white/80 p-6 backdrop-blur-sm">
-              <label className="mb-3 block font-display text-lg font-semibold tracking-wide text-[#9B6BB5]">
-                {t.create.previewLabel}
-              </label>
+          {/* 生成按钮 */}
+          <button
+            type="button"
+            onClick={handleGenerate}
+            disabled={!input.trim() || generating}
+            className="mt-5 flex w-full items-center justify-center gap-2 rounded-full border-2 border-[#FF8FAB] bg-gradient-to-br from-[#FF8FAB] to-[#E8638A] px-8 py-4 text-base font-semibold text-white shadow-md transition-all hover:scale-[1.02] hover:shadow-lg active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+          >
+            <span className="text-lg">{generating ? '⏳' : '✨'}</span>
+            <span>{generating ? t.create.generating : t.create.generateBtn}</span>
+          </button>
 
-              {generating ? (
-                <div className="flex min-h-[200px] items-center justify-center rounded-2xl border-2 border-dashed border-[#FFD1DC]/40 bg-[#FFF9F5]/50 p-6">
-                  <div className="text-center">
-                    <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-[#FFD1DC] border-t-[#FF8FAB]" />
-                    <p className="text-sm text-[#c4a8a8]">{t.create.generating}</p>
-                    <p className="mt-1 text-xs text-[#d4b8b8]">正在从素材库匹配中...</p>
-                  </div>
-                </div>
-              ) : result && resultAsTextItem ? (
-                <div className="space-y-4">
-                  {/* 生成的结果卡片 */}
-                  <TextCard item={resultAsTextItem} delay={0} />
-
-                  {/* AI 匹配说明 */}
-                  {result.reason && (
-                    <div className="rounded-2xl border border-[#E8D5F2]/40 bg-[#F8F0FC]/60 p-3.5">
-                      <p className="flex items-start gap-1.5 text-xs leading-relaxed text-[#8B5AA6]">
-                        <span className="shrink-0">💡</span>
-                        <span>{result.reason}</span>
-                      </p>
-                      {result.sourceIds.length > 0 && (
-                        <p className="mt-1.5 text-xs text-[#c4a8a8]">
-                          来源素材：{result.sourceIds.length} 个（来自精选素材库）
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* 操作按钮 */}
-                  <div className="flex gap-3">
-                    <button
-                      type="button"
-                      onClick={handleRegenerate}
-                      disabled={generating}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-full border-2 border-[#E8D5F2] bg-white/80 px-4 py-2.5 text-sm font-medium text-[#8B5AA6] transition-all hover:bg-[#F8F0FC] active:scale-95 disabled:opacity-50"
-                    >
-                      <span>🔄</span>
-                      <span>{t.create.regenBtn}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => resultAsTextItem && toggleFavorite(resultAsTextItem)}
-                      className={`flex flex-1 items-center justify-center gap-2 rounded-full border-2 px-4 py-2.5 text-sm font-medium transition-all active:scale-95 ${
-                        isResultFavorited
-                          ? 'border-[#FF8FAB] bg-[#FFD1DC] text-[#E8638A]'
-                          : 'border-[#FFD1DC] bg-white/80 text-[#9b8585] hover:bg-[#FFF5F0] hover:text-[#E8638A]'
-                      }`}
-                    >
-                      <span>{isResultFavorited ? '♥' : '♡'}</span>
-                      <span>{isResultFavorited ? t.common.removeFav : t.common.favorite}</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex min-h-[200px] items-center justify-center rounded-2xl border-2 border-dashed border-[#FFD1DC]/40 bg-[#FFF9F5]/50 p-6">
-                  <div className="text-center">
-                    <p className="text-4xl text-[#c4a8a8]">✨</p>
-                    <p className="mt-3 text-sm leading-relaxed text-[#c4a8a8]">
-                      {t.create.previewEmpty}
-                    </p>
-                    <p className="mt-1 text-xs text-[#d4b8b8]">
-                      {t.create.previewEmptyHint}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* 生成历史 */}
-            {history.length > 1 && (
-              <div className="rounded-3xl border-2 border-[#FFD1DC]/60 bg-white/80 p-6 backdrop-blur-sm">
-                <label className="mb-3 block font-display text-lg font-semibold tracking-wide text-[#9B6BB5]">
-                  生成历史 · History
-                </label>
-                <div className="space-y-3">
-                  {history.slice(1, 4).map((item) => {
-                    const histAsTextItem = {
-                      id: item.id,
-                      title: item.title,
-                      content: item.content,
-                      category: item.category,
-                      style: item.style,
-                      tags: item.tags,
-                      variant: item.variant,
-                      tagColor: item.tagColor,
-                      type: 'cute-text' as const,
-                    };
-                    return (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between rounded-2xl border border-[#FFD1DC]/30 bg-[#FFF9F5] p-3.5"
-                      >
-                        <div className="truncate pr-2">
-                          <p className="text-sm font-medium text-[#5c4a4a]">{item.content.split('\n')[0]}</p>
-                          <p className="mt-0.5 text-xs text-[#c4a8a8]">{item.style} · {item.sourceIds.length} 素材</p>
-                        </div>
-                        <div className="flex shrink-0 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => navigator.clipboard.writeText(item.content).catch(() => {})}
-                            className="rounded-full bg-white/80 px-3 py-1 text-xs text-[#FF8FAB] shadow-sm transition-all hover:bg-white active:scale-95"
-                            aria-label={t.common.copy}
-                          >
-                            {t.create.copyBtn}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => histAsTextItem && toggleFavorite(histAsTextItem)}
-                            className={`rounded-full px-3 py-1 text-xs shadow-sm transition-all active:scale-95 ${
-                              isFavorited(item.id)
-                                ? 'bg-[#FFD1DC] text-[#E8638A]'
-                                : 'bg-white/80 text-[#9b8585] hover:bg-[#FFF5F0]'
-                            }`}
-                          >
-                            {isFavorited(item.id) ? '♥' : '♡'}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
+          {!input.trim() && (
+            <p className="mt-3 text-center text-sm text-[#c4a8a8]">
+              {t.create.needInput}
+            </p>
+          )}
         </div>
 
-        {/* 底部装饰 */}
+        {/* 结果区 */}
+        <div className="ct-anim-fade-up mt-8" style={{ animationDelay: '0.2s' }}>
+          {generating ? (
+            <div className="flex min-h-[240px] items-center justify-center rounded-3xl border-2 border-dashed border-[#FFD1DC]/40 bg-white/60 p-6">
+              <div className="text-center">
+                <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-[#FFD1DC] border-t-[#FF8FAB]" />
+                <p className="text-sm text-[#c4a8a8]">{t.create.generating}</p>
+                <p className="mt-1 text-xs text-[#d4b8b8]">
+                  {locale === 'zh' ? '正在从素材库匹配装饰元素...' : 'Matching decorations from library...'}
+                </p>
+              </div>
+            </div>
+          ) : output ? (
+            <div className="space-y-4">
+              {/* 结果标题 */}
+              <div className="flex items-center justify-between">
+                <h2 className="font-display text-xl font-semibold tracking-wide text-[#E8638A]">
+                  {t.create.previewLabel}
+                </h2>
+                <button
+                  type="button"
+                  onClick={handleGenerate}
+                  disabled={generating}
+                  className="flex items-center gap-1.5 rounded-full border-2 border-[#E8D5F2] bg-white/80 px-4 py-2 text-sm font-medium text-[#8B5AA6] transition-all hover:bg-[#F8F0FC] active:scale-95 disabled:opacity-50"
+                >
+                  <span>🔄</span>
+                  <span>{t.create.regenBtn}</span>
+                </button>
+              </div>
+
+              {/* 3 个装饰方案 */}
+              {output.results.map((result, index) => {
+                const decoId = `deco-${genCount}-${index}`;
+                const fav = isFavorited(decoId);
+                return (
+                  <div
+                    key={`${genCount}-${index}`}
+                    className="ct-anim-fade-up rounded-3xl border-2 border-[#FFD1DC]/50 bg-white/80 p-5 backdrop-blur-sm transition-all hover:border-[#FF8FAB]/40 hover:shadow-md"
+                    style={{ animationDelay: `${0.1 * index}s` }}
+                  >
+                    {/* 装饰文字内容 */}
+                    <div className="rounded-2xl bg-[#FFF9F5] p-5">
+                      <pre className="whitespace-pre-wrap break-words font-mono text-center text-base leading-relaxed text-[#5c4a4a]">
+                        {result.text}
+                      </pre>
+                    </div>
+
+                    {/* 排版信息 */}
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-[#FFF5F0] px-2.5 py-0.5 text-xs text-[#FF8FAB]">
+                        {result.layout}
+                      </span>
+                      {result.sources.kaomoji && (
+                        <span className="rounded-full bg-[#F8F0FC] px-2.5 py-0.5 text-xs text-[#8B5AA6]">
+                          {locale === 'zh' ? '颜文字' : 'Kaomoji'} · {result.sources.kaomoji.title}
+                        </span>
+                      )}
+                      {result.sources.unicode && (
+                        <span className="rounded-full bg-[#F0FAF5] px-2.5 py-0.5 text-xs text-[#6BB595]">
+                          {locale === 'zh' ? '符号' : 'Unicode'} · {result.sources.unicode.title}
+                        </span>
+                      )}
+                      {result.sources.decoration && (
+                        <span className="rounded-full bg-[#FFF5F0] px-2.5 py-0.5 text-xs text-[#E8638A]">
+                          {locale === 'zh' ? '装饰线' : 'Decoration'} · {result.sources.decoration.title}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* 操作按钮 */}
+                    <div className="mt-4 flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(result.text, index)}
+                        className={`flex flex-1 items-center justify-center gap-2 rounded-full border-2 px-4 py-2.5 text-sm font-medium transition-all active:scale-95 ${
+                          copiedIndex === index
+                            ? 'border-[#6BB595] bg-[#C8E6D5] text-[#4A8A6A]'
+                            : 'border-[#FFD1DC] bg-white/80 text-[#9b8585] hover:bg-[#FFF5F0] hover:text-[#E8638A]'
+                        }`}
+                      >
+                        <span>{copiedIndex === index ? '✓' : '📋'}</span>
+                        <span>{copiedIndex === index ? 'Copied ✨' : t.common.copy}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFavorite(result.text, index)}
+                        className={`flex flex-1 items-center justify-center gap-2 rounded-full border-2 px-4 py-2.5 text-sm font-medium transition-all active:scale-95 ${
+                          fav
+                            ? 'border-[#FF8FAB] bg-[#FFD1DC] text-[#E8638A]'
+                            : 'border-[#FFD1DC] bg-white/80 text-[#9b8585] hover:bg-[#FFF5F0] hover:text-[#E8638A]'
+                        }`}
+                      >
+                        <span>{fav ? '♥' : '♡'}</span>
+                        <span>{fav ? t.common.removeFav : t.common.favorite}</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* AI 说明 */}
+              <div className="rounded-2xl border border-[#E8D5F2]/40 bg-[#F8F0FC]/60 p-4">
+                <p className="flex items-start gap-1.5 text-xs leading-relaxed text-[#8B5AA6]">
+                  <span className="shrink-0">💡</span>
+                  <span>
+                    {locale === 'zh'
+                      ? `AI 保留了你的原始文字「${output.inputText}」，从素材库匹配了颜文字、Unicode 符号和装饰线进行组合。每次生成结果不同，点击再生成获取更多方案。`
+                      : `AI preserved your original text "${output.inputText}" and decorated it with kaomoji, Unicode symbols, and dividers from the library. Click regenerate for more variations.`}
+                  </span>
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex min-h-[240px] items-center justify-center rounded-3xl border-2 border-dashed border-[#FFD1DC]/40 bg-white/60 p-6">
+              <div className="text-center">
+                <p className="text-5xl text-[#c4a8a8]">✨</p>
+                <p className="mt-4 text-sm leading-relaxed text-[#c4a8a8]">
+                  {t.create.previewEmpty}
+                </p>
+                <p className="mt-1 text-xs text-[#d4b8b8]">
+                  {t.create.previewEmptyHint}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 底部 */}
         <footer className="mt-16 text-center">
           <p className="text-sm tracking-wide text-[#c4a8a8]">
             {t.create.footer}
