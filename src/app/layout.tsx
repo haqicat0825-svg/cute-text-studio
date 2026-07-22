@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Quicksand, Playfair_Display } from 'next/font/google';
-import { Inspector } from 'react-dev-inspector';
 import Navbar from '@/components/cute/Navbar';
 import { LanguageProvider } from '@/components/providers/LanguageProvider';
 import './globals.css';
@@ -54,8 +53,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const isDev = process.env.COZE_PROJECT_ENV === 'DEV';
-
   return (
     <html
       lang="en"
@@ -63,7 +60,6 @@ export default function RootLayout({
     >
       <body className={`antialiased ${quicksand.className}`}>
         <LanguageProvider>
-          {isDev && <Inspector />}
           <Navbar />
           {children}
         </LanguageProvider>
