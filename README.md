@@ -193,6 +193,12 @@ Save the file and HMR will automatically refresh the page.
 - [ ] Admin dashboard for material management
 - [ ] PWA support for offline browsing
 
+
+## 🌐 在线体验
+
+[点击打开 Cute Text Studio](https://cae297c9-c017-44da-95e2-5b6311d0ad20.dev.coze.site/)
+
+
 ## License
 
 MIT
